@@ -12,7 +12,7 @@ I built a small Active Directory environment from scratch, attacked it myself us
 
 This was my second SOC-focused project. The first one was a simple brute force detection using Hydra and Event Viewer. This one is a lot more involved — it covers a full attack chain that mirrors how a real breach usually escalates: recon, credential theft, lateral movement, and finally full domain compromise.
 
-I didn't follow one single tutorial for this. I ran into a lot of real problems along the way — wrong tool versions, Windows security updates blocking my attacks, Splunk quirks that took hours to figure out — and I kept all of that in this report instead of hiding it, because figuring that stuff out was honestly most of the actual learning.
+I didn't follow one single tutorial for this. I ran into a lot of real problems along the way — wrong tool versions, Windows security updates blocking my attacks, Splunk quirks that took hours to figure out. Claude helped me a lot througout the whole project — and I kept all of that in this report instead of hiding it, because figuring that stuff out was honestly most of the actual learning.
 
 ---
 
@@ -33,7 +33,7 @@ I created three types of accounts on purpose to represent a realistic small comp
 
 ### Architecture
 
-*(see architecture diagram — Kali attacking DC01, Windows Security Event Logs flowing into Splunk via Universal Forwarder, powering the detections and dashboard)*
+![Architecture diagram](ad_attack_detection_architecture.png)
 
 ---
 
@@ -47,6 +47,8 @@ Using nothing but `aman.verma`'s normal login, I ran BloodHound's collector agai
 
 The result showed a clean path: `itadmin` is a member of `Domain Admins`, which has full `GenericAll`/`Owns` rights over `DC01`. In other words, thirty seconds in, I already knew exactly which account to go after.
 
+![BloodHound attack path](Bloodhound.png)
+
 ### 2. Kerberoasting
 
 I requested a Kerberos service ticket for `svc-sql` using Impacket's `GetUserSPNs`. The ticket comes back encrypted with the target account's password hash — you can take that offline and crack it without touching the network again.
@@ -56,6 +58,8 @@ This is where I hit my first real wall. Microsoft rolled out a 2026 hardening up
 I also learned that `rockyou.txt` — the wordlist basically every guide defaults to — was compiled in 2009, so it physically cannot contain a password like `Summer2024!`. I built a small custom wordlist instead once I realized that, which is actually closer to how real analysts work anyway — targeted lists based on what you already know about the environment, not blind brute force.
 
 Password cracked: `Summer2024!`
+
+![Kerberoasting hash crack](impacket_getuserspns.png)
 
 ### 3. Pass-the-Hash
 
@@ -67,10 +71,15 @@ Using Mimikatz on the DC (with Windows Defender temporarily disabled, since it d
 
 Then, from Kali, I used `impacket-psexec` with just that hash — no password — and got a shell:
 
-```
 C:\Windows\system32> whoami
 nt authority\system
-```
+
+![NTLM hash dump via Mimikatz](NTLM_hash.png)
+
+
+![Pass-the-Hash SYSTEM shell](impacket_psexec.png)
+
+---
 
 I never touched the real Administrator password. Windows accepted the hash directly, because that's exactly what NTLM authentication allows — the hash itself is enough. This is the whole reason Pass-the-Hash works and why it's such a common technique in real breaches.
 
@@ -79,6 +88,8 @@ I never touched the real Administrator password. Windows accepted the hash direc
 Using `itadmin`'s Domain Admin rights, I ran `impacket-secretsdump` with the `-just-dc` flag. This makes Kali pretend to be a second Domain Controller asking for a routine replication sync — and DC01 answered, because Domain Admins genuinely have that permission (`Replicating Directory Changes`).
 
 The result was every password hash in the domain, in one command — including `krbtgt`, which is the account used to sign every Kerberos ticket issued in the domain. Anyone holding that hash can forge tickets that the whole domain will trust, even after a full password reset — this is what's called a Golden Ticket attack, and it's the reason DCSync is considered one of the most severe things that can happen to an AD environment.
+
+![Full domain hash dump via DCSync](DChashes.png)
 
 ---
 
@@ -153,6 +164,11 @@ All three detections were converted into scheduled Splunk alerts (checked every 
 ## Dashboard
 
 Built a single "AD Threat Detection Dashboard" with all three detections grouped under two headers — Credential Theft Detections (Kerberoasting + Pass-the-Hash) and Full Domain Compromise Detection (DCSync) — so it reads as a severity-ordered story rather than a flat list of unrelated panels.
+
+![Dashboard top half](dashboard1.png)
+
+
+![Dashboard bottom half](dashboard2.png)
 
 ---
 
