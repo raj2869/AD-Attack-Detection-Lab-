@@ -92,7 +92,7 @@ The result was every password hash in the domain, in one command — including `
 | Using the stolen hash | Lateral Movement | T1550.002 – Use Alternate Authentication Material: Pass the Hash |
 | DCSync | Credential Access | T1003.006 – OS Credential Dumping: DCSync |
 
-I want to be upfront about something: I don't have all of these IDs memorized, and I don't think that's actually the expected standard. What matters is that I can explain *why* each mapping is correct, and I know how to look this up properly when I need to — which is what real analysts do too. ATT&CK has 600+ techniques; nobody has that memorized.
+I want to be upfront about something: I don't have all of these IDs memorized, and I don't think that's actually the expected standard. What matters is that I know how to look this up properly when I need to — which is what real analysts do too. ATT&CK has 600+ techniques; nobody has that memorized.
 
 ---
 
