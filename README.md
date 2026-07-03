@@ -1,7 +1,6 @@
 # Active Directory Attack Simulation & Detection Lab
 
 **Author:** Priyanshu Singh Rajpurohit
-**Background:** BCA Cybersecurity (3rd year), ECSS certified
 **Lab period:** June 28 – July 2, 2026
 
 ---
