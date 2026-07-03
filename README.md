@@ -88,7 +88,7 @@ Using `itadmin`'s Domain Admin rights, I ran `impacket-secretsdump` with the `-j
 
 The result was every password hash in the domain, in one command — including `krbtgt`, which is the account used to sign every Kerberos ticket issued in the domain. Anyone holding that hash can forge tickets that the whole domain will trust, even after a full password reset — this is what's called a Golden Ticket attack, and it's the reason DCSync is considered one of the most severe things that can happen to an AD environment.
 
-![Full domain hash dump via DCSync](DChashes.png)
+![Full domain hash dump via DCSync](DC_hashes.png)
 
 ---
 
