@@ -1,0 +1,11 @@
+#1 Kerberoasting SPL Query:
+
+index=main EventCode=4769 host="DC01*" NOT Account_Name="*$" NOT Service_Name="*$" Service_Name!="krbtgt" | eval severity="Medium" | table _time severity Account_Name Service_Name Ticket_Encryption_Type Client_Address | sort _time
+
+#2 Pass-the-Hash SPL Query:
+
+index=main EventCode=4624 host="DC01*" Logon_Type=3 Authentication_Package=NTLM Account_Name="Administrator" | eval severity="High" | table _time severity Account_Name Logon_Type Authentication_Package Source_Network_Address
+
+#3 DCSync SPL Query:
+
+index=main EventCode=4662 host="DC01*" "1131f6ad-9c07-11d1-f79f-00c04fc2dcd2" NOT Account_Name="*$" earliest=-7d latest=now | eval severity="Critical" | table _time severity Account_Name Object_Name Properties
