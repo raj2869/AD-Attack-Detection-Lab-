@@ -46,7 +46,7 @@ Using nothing but `aman.verma`'s normal login, I ran BloodHound's collector agai
 
 The result showed a clean path: `itadmin` is a member of `Domain Admins`, which has full `GenericAll`/`Owns` rights over `DC01`. In other words, thirty seconds in, I already knew exactly which account to go after.
 
-![BloodHound attack path](Bloodhound.png)
+![BloodHound attack path](screenshots/Bloodhound.png)
 
 ### 2. Kerberoasting
 
@@ -58,7 +58,7 @@ I also learned that `rockyou.txt` — the wordlist basically every guide default
 
 Password cracked: `Summer2024!`
 
-![Kerberoasting hash crack](impacket_getuserspns.png)
+![Kerberoasting hash crack](screenshots/impacket_getuserspns.png)
 
 ### 3. Pass-the-Hash
 
@@ -73,10 +73,10 @@ Then, from Kali, I used `impacket-psexec` with just that hash — no password �
 C:\Windows\system32> whoami
 nt authority\system
 
-![NTLM hash dump via Mimikatz](NTLM_hash.png)
+![NTLM hash dump via Mimikatz](screenshots/NTLM_hash.png)
 
 
-![Pass-the-Hash SYSTEM shell](impacket_psexec.png)
+![Pass-the-Hash SYSTEM shell](screenshots/impacket_psexec.png)
 
 ---
 
@@ -88,7 +88,7 @@ Using `itadmin`'s Domain Admin rights, I ran `impacket-secretsdump` with the `-j
 
 The result was every password hash in the domain, in one command — including `krbtgt`, which is the account used to sign every Kerberos ticket issued in the domain. Anyone holding that hash can forge tickets that the whole domain will trust, even after a full password reset — this is what's called a Golden Ticket attack, and it's the reason DCSync is considered one of the most severe things that can happen to an AD environment.
 
-![Full domain hash dump via DCSync](DC_hashes.png)
+![Full domain hash dump via DCSync](screenshots/DC_hashes.png)
 
 ---
 
@@ -119,7 +119,7 @@ index=main EventCode=4769 host="DC01*" NOT Account_Name="*$" NOT Service_Name="*
 | sort _time
 ```
 
-The core idea: a *human* account requesting a service ticket for a *service* account is the actual signature of Kerberoasting — not the encryption type. I originally built this filtering on RC4 (`0x17`), which is what most guides teach, but since my ticket came back as AES256 because of the RC4 deprecation, that filter would have completely missed my own attack. Filtering on who's asking for what is a more reliable signature regardless of encryption type used.
+The core idea: a *human* account requesting a service ticket for a *service* account is the actual signature of Kerberoasting — not the encryption type. I originally built this filtering on RC4, which is what most guides teach, but since my ticket came back as AES256 because of the RC4 deprecation, that filter would have completely missed my own attack. Filtering on who's asking for what is a more reliable signature regardless of encryption type used.
 
 This isolated exactly 4 real events out of 131 total 4769 events on the DC.
 
@@ -164,10 +164,10 @@ All three detections were converted into scheduled Splunk alerts (checked every 
 
 Built a single "AD Threat Detection Dashboard" with all three detections grouped under two headers — Credential Theft Detections (Kerberoasting + Pass-the-Hash) and Full Domain Compromise Detection (DCSync) — so it reads as a severity-ordered story rather than a flat list of unrelated panels.
 
-![Dashboard top half](dashboard1.png)
+![Dashboard top half](screenshots/dashboard1.png)
 
 
-![Dashboard bottom half](dashboard2.png)
+![Dashboard bottom half](screenshots/dashboard2.png)
 
 ---
 
